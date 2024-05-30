@@ -127,16 +127,12 @@ docker compose -p kitchenpos up -d
 | 한글명      | 영문명                 | 설명                                                                                                 |
 |----------|---------------------|----------------------------------------------------------------------------------------------------|
 | 메뉴       | menu                | - 사장님이 등록 후 손님이 주문할 수 있는 단위이며, 한 개 이상 상품으로 구성된다. <br> - 한 개 이상 상품으로 구성된다. <br> - 한 개의 메뉴 그룹에 속해있다. |
+| 메뉴 이름    | menu name           | - 메뉴를 표현하는 이름으로, 등록할 때 필요하다. (단, 비속어 포함 불가)                                                        |
 | 메뉴 가격    | menu price          | - 사장님이 등록할 수 있는 메뉴의 가격이다.<br> - 메뉴의 가격이 메뉴에 속한 상품 금액의 합보다 높을 경우 메뉴를 노출할 수 없다.                      |
 | 메뉴 노출 상태 | menu display status | - 메뉴의 노출 여부를 의미하며, 노출되거나 숨겨질 수 있다.                                                                 |
 | 노출된 메뉴   | displayed menu      | - 손님이 메뉴에 대한 정보를 볼 수 있다는 것을 의미한다.                                                                  |
 | 숨겨진 메뉴   | undisplayed menu    | - 손님이 메뉴에 대한 정보를 볼 수 없다는 것을 의미한다.                                                                  |
-
-### 메뉴 상품
-
-| 한글명   | 영문명          | 설명                                 |
-|-------|--------------|------------------------------------|
-| 메뉴 상품 | menu product | - 메뉴를 구성하는 상품으로, 하나의 상품과 개수로 구성된다. |
+| 메뉴 상품    | menu product        | - 메뉴를 구성하는 상품으로, 하나의 상품과 개수로 구성된다.                                                                 |
 
 ### 주문테이블
 
@@ -150,9 +146,10 @@ docker compose -p kitchenpos up -d
 
 ### 주문
 
-| 한글명   | 영문명             | 설명                                                                                                                  |
-|-------|-----------------|---------------------------------------------------------------------------------------------------------------------|
-| 주문항목  | order line item | - 주문을 구성하는 메뉴로, 하나의 메뉴와 개수, 가격으로 구성된다.                                                                              |
+| 한글명  | 영문명             | 설명                                                                               |
+|------|-----------------|----------------------------------------------------------------------------------|
+| 주문항목 | order line item | - 주문을 구성하는 메뉴로, 하나의 메뉴와 개수, 가격으로 구성된다.                                           |
+| 주문유형 | order type      | - 주문의 유형을 표현한다. 배달주문(`DELIEVERY_ORDER`), 포장주문(`TAKEOUT`), 매장주문(`EAT_IN`)으로 구성된다. |
 
 #### 배달주문
 
@@ -188,4 +185,171 @@ docker compose -p kitchenpos up -d
 | 매장 서빙 완료 | eat-in order served    | - 음식 조리가 끝나 손님에게 전달할 수 있는 상태를 말한다.                                                                       |
 | 매장 주문 완료 | eat-in order completed | - 주문이 완료된 상태를 말한다.                                                                                       |
 
+
 ## 모델링
+
+### 상품
+
+#### 속성
+- `Product` 는 식별자, `ProductName`, `ProductPrice` 을 가진다.
+
+#### 행위
+- `Product`를 등록할 수 있다.
+  - `ProductPrice`가 올바르지 않으면 등록할 수 없다.
+  - `ProductPrice`는 0원 이상이어야 한다.
+  - `ProductName`가 올바르지 않으면 등록할 수 없다. 
+  - `ProductName`에는 비속어가 포함될 수 없다.
+- `Product`에서 `ProductPrice`를 변경할 수 있다.
+  - `ProductPrice`가 올바르지 않으면 변경할 수 없다. 
+  - `ProductPrice`는 0원 이상이어야 한다.  
+
+  
+
+### 메뉴 그룹
+
+#### 속성
+- `MenuGroup` 은 식별자, `MenuGroupName` 을 가진다.
+
+#### 행위 
+- `MenuGroup`을 등록할 수 있다. 
+  - `MenuGroupName`이 올바르지 않으면 등록할 수 없다.
+  - `MenuGroupName`은 존재해야 한다.
+
+
+
+### 메뉴
+
+#### 속성
+- `Menu` 는 식별자, `MenuName`, `MenuPrice`, `MenuGroup`, `MenuDisplayStatus`, `MenuProducts` 를 가진다.
+- `MenuProduct` 는 `Product`, `Quantity` 을 가진다.
+- `MenuProduct` 에서 `Product` 의 총 `Price` 을 계산한다.
+
+#### 행위
+- `MenuProducts`의 `Quantity`는 0 이상이어야 한다.
+- `Menu`에서 `MenuProducts`를 생성한다.
+- `Menu`를 등록할 수 있다.
+  - `MenuGroup`이 없으면 등록할 수 없다.
+  - `MenuProducts`가 없으면 등록할 수 없다.
+  - `MenuName`이 올바르지 않으면 등록할 수 없다. 
+    - `MenuName`에는 비속어가 포함될 수 없다. 
+  - `MenuPrice`가 올바르지 않으면 등록할 수 없다. 
+    - `MenuPrice`는 0원 이상이어야 한다. 
+    - `MenuPrice`는 `MenuProducts`의 총합보다 작거나 같아야 한다. 
+- `Menu`에서 `MenuPrice`를 변경할 수 있다. 
+  - `MenuPrice`가 올바르지 않으면 변경할 수 없다.
+    - `MenuPrice`는 0원 이상이어야 한다.
+  - `MenuPrice`는 `MenuProducts`의 총합보다 작거나 같아야 한다.
+- `Menu`에서 `MenuDisplayStatus` 를 변경할 수 있다.
+  - `MenuPrice`가 `MenuProducts`의 총합보다 클 경우 `DisplayedMenu`가 될 수 없다.
+- `Menu`에서 `MenuProduct` 가격의 총 `Price`을 계산한다.
+
+
+
+### 주문 테이블
+
+#### 속성
+- `OrderTable` 은 식별자, `OrderTableName`, `NumberOfGuests`, `Occupied` 를 가진다.
+
+#### 행위
+- `OrderTable`를 등록할 수 있다. 
+  - `OrderTableName`이 존재하지 않으면 등록할 수 없다.
+- `OrderTable` 에서 `Occupied`를 변경할 수 있다.
+  - `OrderTabe`을 사용하는 `EatInOrder`가 있을 경우 `ClearedTable` 상태로 변경할 수 없다. 
+- `OrderTable` 에서 `NumberOfGuests`를 변경할 수 있다.
+  - `NumberOfGuest`가 0 미만이면 변경할 수 없다.
+  - `ClearedTable`은 `NumberOfGuests`를 변경할 수 없다.
+
+
+
+
+### 배달 주문
+#### 속성
+- `DeliveryOrder` 는 `OrderType` 중 `DELIVERY_ORDER` 를 가진다.
+- `DeliveryOrder` 는 식별자, `DeliveryOrderStatus`, 주문 일시, `DeliveryAddress`, `OrderLineItems` 을 가진다.
+- `OrderLineItems`은 선택한 `Menu`와 `Quantity`과 총 `Price`을 가진다.
+
+#### 행위 
+- `DeliveryOrder` 에서 `OrderLineItems` 를 생성한다.
+  - `OrderLineItems`는 `Menu`가 존재하지 않으면 생성할 수 없다. 
+  - `OrderLineItems`의 `Menu`가 `DisplayedMenu`가 아니면 생성할 수 없다.
+  - `OrderLineItems`는 `Quantity`가 0 미만이면 생성할 수 없다. 
+  - `DeliveryOrder`는 1개 이상의 `OrderLineItems`가 존재하지 않으면 등록할 수 없다.
+  - `DeliveryOrder`는 `DeliveryAddress`가 존재하지 않으면 등록할 수 없다.
+- `DeliveryOrder` 에서 `DeliveryOrderStatus` 를 `Waiting`로 변경할 수 있다.
+- `DeliveryOrder` 에서 `DeliveryOrderStatus` 를 `Accepted`로 변경할 수 있다.
+  - 변경 시 배달 대행사를 호출한다.
+- `DeliveryOrder` 에서 `DeliveryOrderStatus` 를 `Served`로 변경할 수 있다.
+- `DeliveryOrder` 에서 `DeliveryOrderStatus` 를 `Delivering`로 변경할 수 있다.
+- `DeliveryOrder` 에서 `DeliveryOrderStatus` 를 `Delivered`로 변경할 수 있다.
+- `DeliveryOrder` 에서 `DeliveryOrderStatus` 를 `Completed`로 변경할 수 있다.
+- `DeliveryOrder` 에서 `DeliveryOrderStatus` 변경 시 순차적이어야 한다.
+    ```mermaid
+    ---
+    title: OrderStatus
+    ---
+    flowchart LR
+      A[Waiting] --> D(Accepted)
+      D --> E(Served)
+      E --> F(Delivering)
+      F --> G(Delivered)
+      G --> H[Completed]
+    ```
+
+### 포장 주문
+
+#### 속성
+- `TakeoutOrder` 는 `OrderType` 중 `TAKEOUT` 를 가진다.
+- `TakeoutOrder` 는 식별자, `TakeoutOrderStatus`, 주문 일시, `OrderLineItems` 을 가진다.
+- `OrderLineItems`은 선택한 `Menu`와 `Quantity` 과 총 `Price` 을 가진다.
+
+#### 행위
+- `TakeoutOrder` 에서 `OrderLineItems` 를 생성한다.
+  - `OrderLineItems`는 `Menu`가 존재하지 않으면 생성할 수 없다.
+  - `OrderLineItems`의 `Menu`가 `DisplayedMenu`가 아니면 생성할 수 없다.
+  - `OrderLineItems`는 `Quantity`가 0 미만이면 생성할 수 없다.
+  - `TakeoutOrder`는 1개 이상의 `OrderLineItems`가 존재하지 않으면 등록할 수 없다.
+- `TakeoutOrder` 에서 `TakeoutOrderStatus` 를 `Waiting`로 변경할 수 있다.
+- `TakeoutOrder` 에서 `TakeoutOrderStatus` 를 `Accepted`로 변경할 수 있다.
+- `TakeoutOrder` 에서 `TakeoutOrderStatus` 를 `Served`로 변경할 수 있다.
+- `TakeoutOrder` 에서 `TakeoutOrderStatus` 를 `Completed`로 변경할 수 있다.
+- `TakeoutOrder` 에서 `TakeoutOrderStatus` 변경 시 순차적이어야 한다.
+
+  ```mermaid
+  ---
+  title: OrderStatus
+  ---
+  flowchart LR
+    A[Waiting] --> D(Accepted)
+    D --> E(Served)
+    E --> H[Completed]
+  ```
+
+
+### 매장 주문
+
+#### 속성
+- `EatInOrder` 는 `OrderType` 중 `EAT_IN` 를 가진다.
+- `EatInOrder` 는 식별자, `EatInOrderStatus`, 주문 일시, `OrderLineItems`, `OrderTable`을 가진다.
+- `OrderLineItems`은 선택한 `Menu`와 `Quantity` 과 총 `Price` 을 가진다.
+
+#### 행위
+- `EatInOrder` 에서 `OrderLineItems` 를 생성한다.
+  - `OrderLineItems`는 `Menu`가 존재하지 않으면 생성할 수 없다.
+  - `OrderLineItems`의 `Menu`가 `DisplayedMenu`가 아니면 생성할 수 없다.
+  - `EatInOrder`는 1개 이상의 `OrderLineItems`가 존재하지 않으면 등록할 수 없다.
+  - `EatInOrder`는 `OrderTable`이 `ClearedTable` 상태가 아니면 등록할 수 없다.
+- `EatInOrder` 에서 `EatInOrderStatus` 를 `Waiting`로 변경할 수 있다.
+- `EatInOrder` 에서 `EatInOrderStatus` 를 `Accepted`로 변경할 수 있다.
+- `EatInOrder` 에서 `EatInOrderStatus` 를 `Served`로 변경할 수 있다.
+- `EatInOrder` 에서 `EatInOrderStatus` 를 `Completed`로 변경할 수 있다.
+  - `OrderTable`에게 `EatInOrderStatus`가 `Completed` 되었음을 알린다. 
+- `EatInOrder` 에서 `EatInOrderStatus` 변경 시 순차적이어야 한다.
+  ```mermaid
+  ---
+  title: OrderStatus
+  ---
+  flowchart LR
+    A[Waiting] --> D(Accepted)
+    D --> E(Served)
+    E --> H[Completed]
+  ```
