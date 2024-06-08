@@ -200,6 +200,7 @@ docker compose -p kitchenpos up -d
    
 - `Menu`의 `price`는 `MenuProducts`의 금액의 합보다 적거나 같아야 한다.
 - `Menu`의 가격이 `MenuProducts`의 금액의 합보다 크면 `hiddenMenu`가 된다.
+- `Menu`의 가격은 0원 이상이어야 한다.
 
 ### 매장 주문
 
@@ -222,6 +223,7 @@ docker compose -p kitchenpos up -d
 
 - `Order`는 주문 접수 대기 -> 주문 접수 -> 서빙 완료 -> 배달 -> 배달 완료 -> 주문 종료 순서로 진행된다.
 - `Order`가 접수되면 `DeliveryAgency`가 호출된다.
+- 배달 주소를 입력해야한다.
 
 ### 포장 주문
 
